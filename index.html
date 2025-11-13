@@ -1,0 +1,539 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+    <title>Tourna App</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Babel Standalone to transpile JSX in the browser -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+      /* --- START OF inlined index.css --- */
+      @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+
+      :root {
+        --background-dark: #0F1021;
+        --background-med: #1A1A2E;
+        --background-light: #2C2C4E;
+        --accent-cyan: #00F2EA;
+        --accent-pink: #E845A6;
+        --text-primary: #FFFFFF;
+        --text-secondary: #A0A0B8;
+      }
+
+      body {
+        background-color: var(--background-dark);
+        font-family: 'Poppins', sans-serif;
+        color: var(--text-primary);
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+
+      /* For scrollbars */
+      ::-webkit-scrollbar {
+        width: 4px;
+      }
+      ::-webkit-scrollbar-track {
+        background: var(--background-med);
+      }
+      ::-webkit-scrollbar-thumb {
+        background: var(--background-light);
+        border-radius: 2px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: var(--accent-cyan);
+      }
+
+      .cyan-glow {
+        box-shadow: 0 0 15px 2px rgba(0, 242, 234, 0.4);
+      }
+      /* --- END OF inlined index.css --- */
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.29.1",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.553.0"
+  }
+}
+</script>
+</head>
+  <body>
+    <div id="root"></div>
+    
+    <script type="text/babel" data-type="module">
+      // --- START OF COMBINED REACT/TSX CODE ---
+
+      // Imports from CDNs
+      import React, { useState, useRef, useEffect } from 'https://esm.sh/react@18.2.0';
+      import ReactDOM from 'https://esm.sh/react-dom@18.2.0/client';
+      import * as Lucide from 'https://esm.sh/lucide-react@0.408.0';
+      import { GoogleGenAI } from 'https://esm.sh/@google/genai@1.22.0';
+
+      // --- START: components/icons.tsx ---
+      const defaultProps = {
+        strokeWidth: 2,
+        className: "w-5 h-5"
+      };
+
+      const {
+        Home, Wallet, User, BarChart2, Megaphone, Gamepad2, Flame, Trophy, Clock, History, Users, Bot, Headset, Shield, Info, LogOut, Phone, Lock, Eye, EyeOff, PlusCircle, ArrowLeft, ChevronRight, Send, Sparkles
+      } = Lucide;
+
+      const HomeIcon = (props) => <Home {...defaultProps} {...props} />;
+      const WalletIcon = (props) => <Wallet {...defaultProps} {...props} />;
+      const ProfileIcon = (props) => <User {...defaultProps} {...props} />;
+      const LeaderboardIcon = (props) => <BarChart2 {...defaultProps} {...props} />;
+      const PromotionsIcon = (props) => <Megaphone {...defaultProps} {...props} />;
+      const GamepadIcon = (props) => <Gamepad2 {...defaultProps} {...props} />;
+      const KillsIcon = (props) => <Flame {...defaultProps} {...props} />;
+      const WinningsIcon = (props) => <Trophy {...defaultProps} {...props} />;
+      const ClockIcon = (props) => <Clock {...defaultProps} {...props} />;
+      const HistoryIcon = (props) => <History {...defaultProps} {...props} />;
+      const ReferralsIcon = (props) => <Users {...defaultProps} {...props} />;
+      const AiIcon = (props) => <Bot {...defaultProps} {...props} />;
+      const SupportIcon = (props) => <Headset {...defaultProps} {...props} />;
+      const PrivacyIcon = (props) => <Shield {...defaultProps} {...props} />;
+      const AboutIcon = (props) => <Info {...defaultProps} {...props} />;
+      const LogoutIcon = (props) => <LogOut {...defaultProps} {...props} />;
+      const PhoneIcon = (props) => <Phone {...defaultProps} {...props} />;
+      const LockIcon = (props) => <Lock {...defaultProps} {...props} />;
+      const EyeIcon = (props) => <Eye {...defaultProps} {...props} />;
+      const EyeOffIcon = (props) => <EyeOff {...defaultProps} {...props} />;
+      const AddMoneyIcon = (props) => <PlusCircle {...defaultProps} {...props} />;
+      const BackIcon = (props) => <ArrowLeft {...defaultProps} {...props} />;
+      const RightArrowIcon = (props) => <ChevronRight {...defaultProps} {...props} />;
+      const SendIcon = (props) => <Send {...defaultProps} {...props} />;
+      const SparklesIcon = (props) => <Sparkles {...defaultProps} {...props} />;
+      // --- END: components/icons.tsx ---
+
+      // --- START: components/ApiKeyDialog.tsx (BottomNav) ---
+      const NavItem = ({ icon, label, isActive, onClick }) => (
+        <button
+          onClick={onClick}
+          className={`flex flex-col items-center justify-center gap-1 w-full transition-colors duration-200 ${
+            isActive ? 'text-[color:var(--accent-cyan)]' : 'text-[color:var(--text-secondary)] hover:text-white'
+          }`}
+          aria-current={isActive ? 'page' : undefined}
+        >
+          {icon}
+          <span className="text-xs font-medium">{label}</span>
+        </button>
+      );
+
+      const BottomNav = ({ activeScreen, setActiveScreen }) => {
+        const navItems = [
+          { id: 'leaderboard', icon: <LeaderboardIcon className="w-6 h-6" />, label: 'Stats' },
+          { id: 'promotions', icon: <PromotionsIcon className="w-6 h-6" />, label: 'Promos' },
+          { id: 'home', icon: <HomeIcon className="w-6 h-6" />, label: 'Home' },
+          { id: 'wallet', icon: <WalletIcon className="w-6 h-6" />, label: 'Wallet' },
+          { id: 'profile', icon: <ProfileIcon className="w-6 h-6" />, label: 'Profile' },
+        ];
+
+        return (
+          <nav className="fixed bottom-0 left-0 right-0 w-full max-w-md mx-auto h-20 bg-[color:var(--background-med)] border-t border-t-[color:var(--background-light)] flex items-center justify-around px-2 z-50">
+            {navItems.map((item) => (
+              <NavItem
+                key={item.id}
+                icon={item.icon}
+                label={item.label}
+                isActive={activeScreen === item.id}
+                onClick={() => setActiveScreen(item.id)}
+              />
+            ))}
+          </nav>
+        );
+      };
+      // --- END: components/ApiKeyDialog.tsx (BottomNav) ---
+      
+      // --- START: components/PromptForm.tsx (LoginScreen) ---
+      const LoginScreen = ({ onLogin }) => {
+        const [showPassword, setShowPassword] = useState(false);
+
+        return (
+          <div className="h-dvh flex flex-col items-center justify-center p-8 bg-[color:var(--background-dark)] text-white">
+            <div className="w-full max-w-sm text-center">
+              <h1 className="text-5xl font-bold mb-12 text-[color:var(--accent-cyan)]" style={{ textShadow: '0 0 10px var(--accent-cyan)' }}>
+                TOURNA APP
+              </h1>
+
+              <form className="space-y-6" onSubmit={(e) => { e.preventDefault(); onLogin(); }}>
+                <div className="relative">
+                  <PhoneIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-[color:var(--text-secondary)]" />
+                  <input
+                    type="tel"
+                    placeholder="Phone Number"
+                    className="w-full bg-[color:var(--background-med)] border-2 border-transparent focus:border-[color:var(--accent-cyan)] text-white placeholder-[color:var(--text-secondary)] rounded-full py-3 pl-12 pr-4 transition-all outline-none"
+                  />
+                </div>
+                <div className="relative">
+                  <LockIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-[color:var(--text-secondary)]" />
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="Password"
+                    className="w-full bg-[color:var(--background-med)] border-2 border-transparent focus:border-[color:var(--accent-cyan)] text-white placeholder-[color:var(--text-secondary)] rounded-full py-3 pl-12 pr-12 transition-all outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-[color:var(--text-secondary)]"
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showPassword ? <EyeOffIcon /> : <EyeIcon />}
+                  </button>
+                </div>
+
+                <button
+                  type="submit"
+                  className="w-full bg-[color:var(--accent-cyan)] text-black font-bold py-4 rounded-full text-lg transition-transform active:scale-95 cyan-glow"
+                >
+                  LOGIN
+                </button>
+              </form>
+
+              <p className="mt-8 text-[color:var(--text-secondary)]">
+                Don't have an account?{' '}
+                <button className="font-semibold text-[color:var(--accent-cyan)] hover:underline">
+                  Register Now
+                </button>
+              </p>
+            </div>
+          </div>
+        );
+      };
+      // --- END: components/PromptForm.tsx (LoginScreen) ---
+      
+      // --- START: components/VideoResult.tsx (HomeScreen) ---
+      const mockUserHome = {
+        name: 'dinesh',
+        avatarInitials: 'MX',
+        walletBalance: 0.00
+      };
+
+      const mockTournaments = [
+        { id: '1', name: '1v1 Showdown — One Wins All', game: 'FULL MAP SOLO', image: 'cs-1', status: 'UPCOMING', dateTime: new Date('2025-11-13T15:00:00'), prizePool: 45, perKill: 0, entryFee: 25, slotsFilled: 0, totalSlots: 2 },
+        { id: '2', name: 'Squad Battle Royale', game: 'CS-1VS1', image: 'cs-2', status: 'UPCOMING', dateTime: new Date('2025-11-13T16:00:00'), prizePool: 200, perKill: 5, entryFee: 50, slotsFilled: 10, totalSlots: 12 },
+        { id: '3', name: 'Lone Wolf Sniper Challenge', game: 'LONE WOLF-1', image: 'cs-3', status: 'UPCOMING', dateTime: new Date('2025-11-14T18:00:00'), prizePool: 100, perKill: 10, entryFee: 30, slotsFilled: 23, totalSlots: 50 },
+      ];
+
+      const TournamentCard = ({ tournament }) => (
+          <div className="bg-[color:var(--background-med)] rounded-2xl overflow-hidden cursor-pointer active:scale-[0.98] transition-transform duration-150">
+              <div className="h-28 bg-[color:var(--background-light)] flex items-center justify-center font-bold text-3xl text-center p-2 text-[color:var(--accent-cyan)]">
+                  {tournament.game}
+              </div>
+              <div className="p-3">
+                  <h3 className="font-semibold text-white truncate">{tournament.name}</h3>
+                  <div className="flex justify-between items-center text-xs text-[color:var(--text-secondary)] mt-2 mb-3">
+                      <span>🗓️ {tournament.dateTime.toLocaleDateString()}</span>
+                      <span>⏰ {tournament.dateTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                  </div>
+                  <div className="flex justify-between text-center text-xs mb-3">
+                      <div>
+                          <p className="text-[color:var(--text-secondary)]">PRIZE POOL</p>
+                          <p className="font-bold text-green-400">₹{tournament.prizePool}</p>
+                      </div>
+                      <div>
+                          <p className="text-[color:var(--text-secondary)]">PER KILL</p>
+                          <p className="font-bold text-yellow-400">₹{tournament.perKill}</p>
+                      </div>
+                      <div>
+                          <p className="text-[color:var(--text-secondary)]">ENTRY FEE</p>
+                          <p className="font-bold text-red-400">₹{tournament.entryFee}</p>
+                      </div>
+                  </div>
+                  <div className="w-full bg-[color:var(--background-light)] rounded-full h-2.5">
+                      <div className="bg-[color:var(--accent-cyan)] h-2.5 rounded-full" style={{ width: `${(tournament.slotsFilled / tournament.totalSlots) * 100}%` }}></div>
+                  </div>
+                  <p className="text-center text-xs text-[color:var(--text-secondary)] mt-1">{tournament.slotsFilled}/{tournament.totalSlots} Slots Filled</p>
+              </div>
+          </div>
+      );
+
+      const HomeScreen = ({ navigate }) => {
+        const [activeContestTab, setActiveContestTab] = useState('UPCOMING');
+
+        return (
+          <div className="text-white min-h-full">
+            <header className="p-4 flex justify-between items-center">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-[color:var(--accent-cyan)] flex items-center justify-center font-bold text-black">
+                  {mockUserHome.avatarInitials}
+                </div>
+                <span className="font-semibold">{mockUserHome.name}</span>
+              </div>
+              <button onClick={() => navigate('wallet')} className="flex items-center gap-2 bg-[color:var(--background-med)] px-3 py-1.5 rounded-full">
+                <span>₹{mockUserHome.walletBalance.toFixed(2)}</span>
+                <AddMoneyIcon className="w-5 h-5 text-[color:var(--accent-cyan)]" />
+              </button>
+            </header>
+
+            <section className="px-4 py-2">
+              <div className="h-40 bg-[color:var(--background-med)] rounded-2xl flex items-center justify-center">
+                  <p className="text-[color:var(--text-secondary)]">Promotions Carousel</p>
+              </div>
+            </section>
+
+            <section className="px-4 py-4">
+              <h2 className="text-lg font-bold">My Contests</h2>
+              <p className="text-xs text-[color:var(--text-secondary)] mb-4">Your Tournaments Journey</p>
+              <div className="flex justify-around bg-[color:var(--background-med)] p-1 rounded-full">
+                  {['ONGOING', 'UPCOMING', 'RESULT'].map((tab) => (
+                      <button
+                          key={tab}
+                          onClick={() => setActiveContestTab(tab)}
+                          className={`w-full py-2.5 rounded-full text-sm font-semibold transition-colors ${activeContestTab === tab ? 'bg-[color:var(--background-light)] text-white' : 'text-[color:var(--text-secondary)]'}`}
+                      >
+                          {tab}
+                      </button>
+                  ))}
+              </div>
+            </section>
+
+            <section className="px-4 py-2">
+              <h2 className="text-lg font-bold">GAME-Z TOURNAMENTS</h2>
+              <p className="text-xs text-[color:var(--text-secondary)] mb-4">Big Winnings For All</p>
+              <div className="grid grid-cols-2 gap-4">
+                  {mockTournaments.map(t => <TournamentCard key={t.id} tournament={t} />)}
+              </div>
+            </section>
+          </div>
+        );
+      };
+      // --- END: components/VideoResult.tsx (HomeScreen) ---
+      
+      // --- START: services/geminiService.ts (AIAssistantScreen) ---
+      const getAiAssistantResponse = async (prompt) => {
+        try {
+          const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+          const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: `You are a helpful AI assistant for "Tourna App", a gaming tournament application. Be friendly, concise, and helpful. Address the user's query about the app or gaming in general. User's query: "${prompt}"`,
+          });
+          return response.text;
+        } catch (error) {
+          console.error("AI Assistant error:", error);
+          if (error instanceof Error) {
+              return `Sorry, I encountered an error: ${error.message}`;
+          }
+          return "Sorry, I'm having trouble connecting. Please try again later.";
+        }
+      };
+
+      const AIAssistantScreen = ({ navigate }) => {
+          const [messages, setMessages] = useState([
+              { sender: 'ai', text: "Hello! I'm your AI Assistant. How can I help you with the Tourna App today?" }
+          ]);
+          const [input, setInput] = useState('');
+          const [isLoading, setIsLoading] = useState(false);
+          const messagesEndRef = useRef(null);
+
+          const scrollToBottom = () => {
+              messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+          }
+
+          useEffect(scrollToBottom, [messages]);
+
+          const handleSend = async () => {
+              if (input.trim() === '' || isLoading) return;
+
+              const userMessage = { sender: 'user', text: input };
+              setMessages(prev => [...prev, userMessage]);
+              setInput('');
+              setIsLoading(true);
+
+              const aiResponse = await getAiAssistantResponse(input);
+              const aiMessage = { sender: 'ai', text: aiResponse };
+              
+              setMessages(prev => [...prev, aiMessage]);
+              setIsLoading(false);
+          };
+
+          return (
+              <div className="h-full flex flex-col bg-[color:var(--background-dark)]">
+                  <header className="flex items-center p-4 bg-[color:var(--background-med)] sticky top-0 z-10">
+                      <button onClick={() => navigate('profile')} className="p-2 -ml-2">
+                          <BackIcon />
+                      </button>
+                      <h1 className="text-xl font-bold text-center flex-grow">AI Assistant</h1>
+                  </header>
+
+                  <div className="flex-grow p-4 overflow-y-auto space-y-4">
+                      {messages.map((msg, index) => (
+                          <div key={index} className={`flex items-end gap-2 ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
+                            {msg.sender === 'ai' && <div className="w-8 h-8 rounded-full bg-[color:var(--accent-cyan)] flex items-center justify-center shrink-0"><SparklesIcon className="w-5 h-5 text-black"/></div>}
+                              <div className={`max-w-xs md:max-w-md p-3 rounded-2xl ${msg.sender === 'user' ? 'bg-indigo-600 rounded-br-none' : 'bg-[color:var(--background-light)] rounded-bl-none'}`}>
+                                <p className="text-white whitespace-pre-wrap">{msg.text}</p>
+                              </div>
+                          </div>
+                      ))}
+                      {isLoading && (
+                          <div className="flex items-end gap-2 justify-start">
+                              <div className="w-8 h-8 rounded-full bg-[color:var(--accent-cyan)] flex items-center justify-center shrink-0"><SparklesIcon className="w-5 h-5 text-black"/></div>
+                              <div className="max-w-xs md:max-w-md p-3 rounded-2xl bg-[color:var(--background-light)] rounded-bl-none">
+                                  <div className="flex items-center gap-2">
+                                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+                                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+                                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                                  </div>
+                              </div>
+                          </div>
+                      )}
+                      <div ref={messagesEndRef} />
+                  </div>
+
+                  <div className="p-4 bg-[color:var(--background-med)]">
+                      <div className="flex items-center bg-[color:var(--background-light)] rounded-full p-2">
+                          <input
+                              type="text"
+                              value={input}
+                              onChange={(e) => setInput(e.target.value)}
+                              onKeyPress={(e) => e.key === 'Enter' && handleSend()}
+                              placeholder="Ask me anything..."
+                              className="flex-grow bg-transparent focus:outline-none px-3 text-white placeholder-[color:var(--text-secondary)]"
+                              disabled={isLoading}
+                          />
+                          <button onClick={handleSend} disabled={isLoading || input.trim() === ''} className="p-2 bg-[color:var(--accent-cyan)] rounded-full disabled:bg-gray-600">
+                              <SendIcon className="w-5 h-5 text-black" />
+                          </button>
+                      </div>
+                  </div>
+              </div>
+          );
+      };
+      // --- END: services/geminiService.ts (AIAssistantScreen) ---
+
+      // --- START: components/LoadingIndicator.tsx (ProfileScreen) ---
+      const mockUserProfile = {
+        name: 'dinesh',
+        phone: '9509790043',
+        avatarInitials: 'MX',
+        matchesPlayed: 0,
+        totalKills: 0,
+        totalWinnings: 0,
+      };
+
+      const StatCard = ({ icon, label, value }) => (
+        <div className="flex flex-col items-center gap-2">
+          <div className="text-[color:var(--accent-cyan)]">{icon}</div>
+          <span className="text-lg font-bold text-white">{value}</span>
+          <span className="text-xs text-[color:var(--text-secondary)]">{label}</span>
+        </div>
+      );
+
+      const ProfileLink = ({ icon, label, onClick, isLogout = false }) => (
+        <button onClick={onClick} className={`w-full flex items-center justify-between p-4 rounded-lg transition-colors ${isLogout ? 'text-red-400 hover:bg-red-500/10' : 'text-gray-200 hover:bg-[color:var(--background-light)]'}`}>
+          <div className="flex items-center gap-4">
+            <div className={isLogout ? 'text-red-400' : 'text-[color:var(--accent-cyan)]'}>{icon}</div>
+            <span className="font-medium">{label}</span>
+          </div>
+          {!isLogout && <RightArrowIcon className="text-[color:var(--text-secondary)]" />}
+        </button>
+      );
+
+      const ProfileScreen = ({ navigate, onLogout }) => {
+        return (
+          <div className="p-4 text-white bg-[color:var(--background-dark)] min-h-full">
+            <h1 className="text-2xl font-bold text-center mb-6">My Profile</h1>
+
+            <div className="flex items-center gap-4 mb-8">
+              <div className="w-16 h-16 rounded-full bg-[color:var(--accent-cyan)] flex items-center justify-center text-2xl font-bold text-black">
+                {mockUserProfile.avatarInitials}
+              </div>
+              <div>
+                <h2 className="text-xl font-semibold">{mockUserProfile.name}</h2>
+                <p className="text-sm text-[color:var(--text-secondary)]">{mockUserProfile.phone}</p>
+              </div>
+            </div>
+            
+            <div className="bg-[color:var(--background-med)] p-4 rounded-xl flex justify-around items-center mb-8">
+              <StatCard icon={<GamepadIcon className="w-7 h-7" />} label="Matches Played" value={mockUserProfile.matchesPlayed} />
+              <StatCard icon={<KillsIcon className="w-7 h-7" />} label="Total Kills" value={mockUserProfile.totalKills} />
+              <StatCard icon={<WinningsIcon className="w-7 h-7" />} label="Total Winnings" value={`₹${mockUserProfile.totalWinnings.toFixed(2)}`} />
+            </div>
+
+            <div className="bg-[color:var(--background-med)] p-2 rounded-xl space-y-1">
+              <ProfileLink icon={<HistoryIcon />} label="My Matches" onClick={() => {}} />
+              <ProfileLink icon={<HistoryIcon />} label="Transaction History" onClick={() => navigate('wallet')} />
+              <ProfileLink icon={<ReferralsIcon />} label="My Referrals" onClick={() => {}} />
+              <ProfileLink icon={<AiIcon />} label="AI Assistant" onClick={() => navigate('ai_assistant')} />
+              <ProfileLink icon={<SupportIcon />} label="Customer Support" onClick={() => {}} />
+              <ProfileLink icon={<PrivacyIcon />} label="Privacy Policy" onClick={() => {}} />
+              <ProfileLink icon={<AboutIcon />} label="About Us" onClick={() => {}} />
+              <ProfileLink icon={<LogoutIcon />} label="Logout" onClick={onLogout} isLogout />
+            </div>
+
+          </div>
+        );
+      };
+      // --- END: components/LoadingIndicator.tsx (ProfileScreen) ---
+      
+      // --- START: App.tsx ---
+      const App = () => {
+        const [isLoggedIn, setIsLoggedIn] = useState(false);
+        const [activeScreen, setActiveScreen] = useState('home');
+
+        const handleLogin = () => {
+          setIsLoggedIn(true);
+          setActiveScreen('home');
+        };
+
+        const handleLogout = () => {
+          setIsLoggedIn(false);
+        };
+
+        const renderScreen = () => {
+          switch (activeScreen) {
+            case 'home':
+              return <HomeScreen navigate={setActiveScreen} />;
+            case 'profile':
+              return <ProfileScreen navigate={setActiveScreen} onLogout={handleLogout} />;
+            case 'ai_assistant':
+              return <AIAssistantScreen navigate={setActiveScreen} />;
+            case 'leaderboard':
+            case 'promotions':
+            case 'wallet':
+              return <div className="p-8 text-center"><h1 className="text-2xl font-bold">{activeScreen.charAt(0).toUpperCase() + activeScreen.slice(1)}</h1><p className="text-gray-400">This screen is not yet implemented.</p></div>;
+            default:
+              return <HomeScreen navigate={setActiveScreen} />;
+          }
+        };
+
+        if (!isLoggedIn) {
+          return <LoginScreen onLogin={handleLogin} />;
+        }
+
+        return (
+          <div className="h-dvh w-full max-w-md mx-auto bg-[#0F1021] flex flex-col font-sans overflow-hidden">
+            <main className="flex-grow overflow-y-auto pb-20">
+              {renderScreen()}
+            </main>
+            <BottomNav activeScreen={activeScreen} setActiveScreen={setActiveScreen} />
+          </div>
+        );
+      };
+      // --- END: App.tsx ---
+      
+      // --- START: index.tsx ---
+      const rootElement = document.getElementById('root');
+      if (!rootElement) {
+        throw new Error("Could not find root element to mount to");
+      }
+
+      const root = ReactDOM.createRoot(rootElement);
+      root.render(
+        <React.StrictMode>
+          <App />
+        </React.StrictMode>
+      );
+      // --- END: index.tsx ---
+
+      // --- END OF COMBINED REACT/TSX CODE ---
+    </script>
+  </body>
+</html>
